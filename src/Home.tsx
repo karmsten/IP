@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import Auth from "./Auth/Auth";
+import { Link } from "react-router-dom";
 
 interface HomeProps {
   auth: Auth;
@@ -7,10 +8,15 @@ interface HomeProps {
 
 export default class Home extends Component<HomeProps> {
   render() {
+    const { isAuthenticated, login } = this.props.auth;
     return (
       <div>
         <h1>Home</h1>
-        <button onClick={this.props.auth.login}>Login</button>
+        {isAuthenticated() ? (
+          <Link to="/profile">View profile</Link>
+        ) : (
+          <button onClick={login}>Login</button>
+        )}
       </div>
     );
   }
