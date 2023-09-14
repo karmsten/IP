@@ -1,11 +1,15 @@
 import auth0 from "auth0-js";
+import { GetTokenSilentlyOptions } from "@auth0/auth0-react";
 
 interface AuthResult {
   accessToken: any;
   idToken: any;
   expiresIn: any;
-  /* expiresAt: number; */
 }
+
+let getAccessTokenSilently: (
+  options?: GetTokenSilentlyOptions | undefined
+) => Promise<string>;
 
 export default class Auth {
   private history: any;
@@ -19,22 +23,11 @@ export default class Auth {
       domain: import.meta.env.VITE_REACT_APP_AUTH0_DOMAIN,
       clientID: import.meta.env.VITE_REACT_APP_AUTH0_CLIENT_ID,
       redirectUri: import.meta.env.VITE_REACT_APP_AUTH0_CALLBACK_URL,
+      audience: import.meta.env.VITE_REACT_APP_AUTH0_AUDIENCE,
       responseType: "token id_token",
       scope: "openid profile email",
     });
   }
-  /*   generateRandomState = (): string => {
-    const state = Math.random().toString(36).substring(2);
-    // Store the generated state securely, e.g., in session storage or a private variable
-    return state;
-  }; */
-  /*   login = (): void => {
-    const state = this.generateRandomState();
-    // Store the state securely, e.g., in session storage or a private variable
-    this.auth0.authorize({
-      state, // Include the generated state in the request
-    });
-  }; */
 
   handleAuthentication = (): void => {
     this.auth0.parseHash((err, authResult) => {
@@ -47,38 +40,12 @@ export default class Auth {
         };
         this.setSession(result);
         this.history.push("/");
-        console.log(accessToken, idToken, expiresIn);
+        console.log("accesstoken: ", accessToken);
       } else if (err) {
         console.log(err.error);
-        /* this.history.push("/"); */
-        /* alert(`Error: ${err.error}. See console for further details.`); */
       }
     });
   };
-  /*   handleAuthentication = (): void => {
-    this.auth0.parseHash((err, authResult) => {
-      if (!authResult) {
-        console.log("authResult is undefined");
-        return; // Exit the function if authResult is undefined
-      }
-      if (
-        authResult.accessToken !== undefined &&
-        authResult.idToken !== undefined
-      ) {
-        const { accessToken, idToken, expiresIn = 0 } = authResult;
-        const result: AuthResult = {
-          accessToken: accessToken || "",
-          idToken,
-          expiresIn,
-        };
-        this.setSession(result);
-        this.history.push("/");
-      } else {
-        // Handle scenario where authResult values are initially undefined
-        console.log("Initial authentication");
-      }
-    });
-  }; */
 
   setSession = (authResult: AuthResult) => {
     const expiresAt = JSON.stringify(
