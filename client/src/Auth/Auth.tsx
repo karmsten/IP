@@ -40,7 +40,7 @@ export default class Auth {
         };
         this.setSession(result);
         this.history.push("/");
-        console.log("accesstoken: ", accessToken);
+        /* console.log("accesstoken: ", accessToken); */
       } else if (err) {
         console.log(err.error);
       }
@@ -77,7 +77,7 @@ export default class Auth {
     this.userProfile = null;
     this.auth0.logout({
       clientID: import.meta.env.VITE_REACT_APP_AUTH0_CLIENT_ID,
-      returnTo: "http://localhost:5173/",
+      returnTo: import.meta.env.VITE_REACT_APP_FRONTEND_URL,
     });
   };
 

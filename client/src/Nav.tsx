@@ -25,7 +25,7 @@ const Nav: React.FC<NavProps> = ({ auth }) => {
           </li>
           {isAuthenticated && (
             <li>
-              <Link to="/private">Private</Link>
+              <Link to="/private">Customers</Link>
             </li>
           )}
           <li>
