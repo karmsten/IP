@@ -56871,8 +56871,9 @@ app.get("/fetchOrganisations", function(req, res) {
 app.post("/addOrganisation", (req, res) => {
   const { full_name } = req.body;
   const sql = `
-    INSERT INTO organisations (full_name, create_date, created_by)
-    VALUES (?, CURRENT_TIMESTAMP(), 1)
+  INSERT INTO organisations
+  (full_name, company_id, created_date, created_by, changed_date, changed_by)
+  VALUES(?, NULL, current_timestamp(), 1, NULL, NULL);
   `;
   db.query(sql, [full_name], (err, result) => {
     if (err) {

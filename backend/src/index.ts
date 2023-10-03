@@ -68,8 +68,9 @@ app.post("/addOrganisation", (req, res) => {
 
   // SQL query to insert data into the organisations table with company_id set to NULL
   const sql = `
-    INSERT INTO organisations (full_name, create_date, created_by)
-    VALUES (?, CURRENT_TIMESTAMP(), 1)
+  INSERT INTO organisations
+  (full_name, company_id, created_date, created_by, changed_date, changed_by)
+  VALUES(?, NULL, current_timestamp(), 1, NULL, NULL);
   `;
 
   // Execute the query with data (only full_name is provided)
