@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 export default function Public() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:3001/public")
+    fetch(`${import.meta.env.VITE_REACT_APP_API_URL}/public`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok.");

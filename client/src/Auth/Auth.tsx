@@ -1,5 +1,5 @@
 import auth0 from "auth0-js";
-import { GetTokenSilentlyOptions } from "@auth0/auth0-react";
+/* import { GetTokenSilentlyOptions } from "@auth0/auth0-react"; */
 
 interface AuthResult {
   accessToken: any;
@@ -7,9 +7,9 @@ interface AuthResult {
   expiresIn: any;
 }
 
-let getAccessTokenSilently: (
+/* let getAccessTokenSilently: (
   options?: GetTokenSilentlyOptions | undefined
-) => Promise<string>;
+) => Promise<string>; */
 
 export default class Auth {
   private history: any;

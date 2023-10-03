@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Auth from "./Auth/Auth";
-import { sec } from "./Auth/security"; //not in use
+/* import { sec } from "./Auth/security"; */ //not in use
 import CustomersTable from "./CustomersTable";
 import CustomerDetails from "./CustomerDetails"; // Import the CustomerDetails component
 
@@ -15,6 +15,8 @@ const Private: React.FC<PrivateProps> = ({ auth }) => {
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null); // State for selected customer
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isAddFormVisible, setIsAddFormVisible] = useState(false);
+
+  console.log(backendMessage, error); // only to be able to build (needs a proper solution)
 
   useEffect(() => {
     // Make an API call to the backend (port 3001) to get a message
@@ -75,11 +77,11 @@ const Private: React.FC<PrivateProps> = ({ auth }) => {
         }
         return response.json();
       })
-      .then((data) => {
+      /* .then((data) => {
         console.log("Organization added successfully");
         setIsAddFormVisible(false); // Close the form
         // Optionally, you can update the displayed list of organizations here
-      })
+      }) */
       .catch((err) => {
         console.error("Error:", err);
       });
@@ -91,9 +93,9 @@ const Private: React.FC<PrivateProps> = ({ auth }) => {
     );
     setSelectedCustomer(selected);
   };
-  const handleCloseDetails = () => {
+  /*   const handleCloseDetails = () => {
     setSelectedCustomer(null);
-  };
+  }; */
   const handleAddButtonClick = () => {
     setIsAddFormVisible(true);
   };

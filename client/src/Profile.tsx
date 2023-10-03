@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Auth from "./Auth/Auth";
+//@ts-ignore
 import { Auth0Error } from "@auth0/auth0-spa-js";
 
 interface ProfileProps {
@@ -9,6 +10,8 @@ interface ProfileProps {
 const Profile: React.FC<ProfileProps> = ({ auth }) => {
   const [profile, setProfile] = useState<any | null>(null);
   const [error, setError] = useState<Auth0Error | null>(null);
+
+  console.log(error); //to be able to npm run build (needs proper solution)
 
   useEffect(() => {
     const loadUserProfile = () => {
