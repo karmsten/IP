@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Auth from "./Auth/Auth";
+import Auth from "../Auth/Auth";
 //@ts-ignore
 import { Auth0Error } from "@auth0/auth0-spa-js";
 

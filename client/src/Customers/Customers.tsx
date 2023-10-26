@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
-import Auth from "./Auth/Auth";
+import { Route, Switch, useHistory } from "react-router-dom";
+import Auth from "../Auth/Auth";
 /* import { sec } from "./Auth/security"; */ //not in use
-import CustomersTable from "./CustomersTable";
-import CustomerDetails from "./CustomerDetails"; // Import the CustomerDetails component
+import CustomersTable from "../CustomersTable/CustomersTable";
+import CustomerDetails from "../CustomerDetails/CustomerDetails"; // Import the CustomerDetails component
+import CustomerPage from "../CustomerPage/CustomerPage";
 
-interface PrivateProps {
+interface CustomersProps {
   auth: Auth;
 }
 
-const Private: React.FC<PrivateProps> = ({ auth }) => {
+const Customers: React.FC<CustomersProps> = ({ auth }) => {
   const [backendMessage, setBackendMessage] = useState<string>("");
   const [databaseData, setDatabaseData] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -16,27 +18,43 @@ const Private: React.FC<PrivateProps> = ({ auth }) => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isAddFormVisible, setIsAddFormVisible] = useState(false);
 
-  console.log(backendMessage, error); // only to be able to build (needs a proper solution)
+  /* console.log(backendMessage, error); */ // only to be able to build (needs a proper solution)
 
   useEffect(() => {
-    // Make an API call to the backend (port 3001) to get a message
-    fetch("/private", {
-      headers: { Authorization: `Bearer ${auth.getAccessToken()}` },
-    })
-      .then((response) => {
+    const fetchData = async () => {
+      try {
+        const accessToken = await auth.getAccessToken();
+
+        // Make an API call to the backend to get a message
+        const response = await fetch("/private", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
         if (!response.ok) {
-          console.log("Response status:", response.status);
+          console.error("Response status:", response.status);
           throw new Error("Network response was not ok.");
         }
-        return response.json();
-      })
-      .then((data) => {
-        setBackendMessage(data.message);
-      })
-      .catch((err) => {
+
+        const contentType = response.headers.get("Content-Type");
+        console.log("contentType: ", contentType);
+
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json();
+          setBackendMessage(data.message);
+        } else {
+          // Handle non-JSON responses, e.g., HTML or other content types
+          console.error("Unexpected response format:", contentType);
+          // You can choose to handle this case differently, e.g., show an error message.
+        }
+      } catch (err: any) {
         console.error("Backend API fetch error:", err);
         setError(err.message);
-      });
+      }
+    };
+
+    if (auth.isAuthenticated()) {
+      fetchData();
+    }
   }, [auth]);
 
   useEffect(() => {
@@ -61,6 +79,8 @@ const Private: React.FC<PrivateProps> = ({ auth }) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const full_name = formData.get("full_name");
+    console.log("formData: ", formData);
+    console.log("full_name: ", full_name);
 
     // Send a POST request to your backend to add the organization
     fetch(`${import.meta.env.VITE_REACT_APP_API_URL}/addOrganisation`, {
@@ -73,15 +93,18 @@ const Private: React.FC<PrivateProps> = ({ auth }) => {
       .then((response) => {
         if (!response.ok) {
           console.error("Error adding organization:", response.status);
+          console.log("response.json = ", response.json());
           throw new Error("Failed to add organization");
         }
+
         return response.json();
       })
-      /* .then((data) => {
+      .then((data) => {
         console.log("Organization added successfully");
         setIsAddFormVisible(false); // Close the form
         // Optionally, you can update the displayed list of organizations here
-      }) */
+        setDatabaseData([...databaseData, data]);
+      })
       .catch((err) => {
         console.error("Error:", err);
       });
@@ -103,6 +126,8 @@ const Private: React.FC<PrivateProps> = ({ auth }) => {
   const filteredData = databaseData.filter((customer) =>
     customer.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const history = useHistory();
 
   return (
     <div>
@@ -131,6 +156,7 @@ const Private: React.FC<PrivateProps> = ({ auth }) => {
         customers={filteredData}
         onCustomerClick={handleCustomerClick}
       />
+
       {selectedCustomer && (
         <CustomerDetails
           customer={selectedCustomer}
@@ -141,4 +167,4 @@ const Private: React.FC<PrivateProps> = ({ auth }) => {
   );
 };
 
-export default Private;
+export default Customers;

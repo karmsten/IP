@@ -40,6 +40,7 @@ export default class Auth {
         };
         this.setSession(result);
         this.history.push("/");
+        console.log("Access token set:", authResult.accessToken);
         /* console.log("accesstoken: ", accessToken); */
       } else if (err) {
         console.log(err.error);

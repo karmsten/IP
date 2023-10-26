@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Auth from "./Auth/Auth";
+import Auth from "../Auth/Auth";
 
 interface NavProps {
   auth: Auth;
@@ -25,7 +25,7 @@ const Nav: React.FC<NavProps> = ({ auth }) => {
           </li>
           {isAuthenticated && (
             <li>
-              <Link to="/private">Customers</Link>
+              <Link to="/customers">Customers</Link>
             </li>
           )}
           <li>

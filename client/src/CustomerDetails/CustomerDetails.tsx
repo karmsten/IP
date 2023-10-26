@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import "./CustomerDetails.css";
 
 interface CustomerDetailsProps {
@@ -24,6 +25,9 @@ const CustomerDetails: React.FC<CustomerDetailsProps> = ({
         <p>Created Date: {customer.created_date}</p>
         {/* Add more details as needed */}
         <button onClick={onClose}>Close</button>
+        <Link to={`/customers/${customer.organisation_id}`}>
+          <button>Go To Customer</button>
+        </Link>
       </div>
     </div>
   );
