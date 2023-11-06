@@ -48921,7 +48921,8 @@ VALUES (?, NULL, current_timestamp(), 1, NULL, NULL);
 });
 app.get("/api/customers/:customerId", function(req, res) {
   const customerId = req.params.customerId;
-  const sql = "SELECT * FROM customers WHERE customer_id = ?";
+  console.log("customerId: ", customerId);
+  const sql = "SELECT * FROM organisations WHERE organisation_id = ?";
   db.query(sql, [customerId], (err, results) => {
     if (err) {
       console.error("Error fetching customer details:", err);
@@ -48929,14 +48930,35 @@ app.get("/api/customers/:customerId", function(req, res) {
       return;
     }
     if (Array.isArray(results) && results.length === 0) {
-      res.status(404).json({ error: "Customer not found" });
+      res.status(404).json({ error: "Organization not found" });
     } else {
       if (Array.isArray(results)) {
-        const customer = results[0];
-        res.json(customer);
+        const organization = results[0];
+        res.setHeader("Content-Type", "application/json");
+        res.json(organization);
       } else {
         res.status(500).json({ error: "Internal server error" });
       }
+    }
+  });
+});
+app.delete("/api/customers/:customerId", function(req, res) {
+  const customerId = req.params.customerId;
+  const sql = "DELETE FROM organisations WHERE organisation_id = ?";
+  db.query(sql, [customerId], (err, result) => {
+    if (err) {
+      console.error("Error deleting customer:", err);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+    if ("affectedRows" in result && typeof result.affectedRows === "number") {
+      if (result.affectedRows === 0) {
+        res.status(404).json({ error: "Customer not found" });
+      } else {
+        res.status(200).json({ message: "Customer deleted successfully" });
+      }
+    } else {
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 });

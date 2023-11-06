@@ -107,9 +107,10 @@ VALUES (?, NULL, current_timestamp(), 1, NULL, NULL);
 
 app.get('/api/customers/:customerId', function (req, res) {
   const customerId = req.params.customerId;
+  console.log("customerId: ", customerId)
+  // Modify the SQL query to select the organization based on organization_id
+  const sql = 'SELECT * FROM organisations WHERE organisation_id = ?';
 
-  const sql = 'SELECT * FROM customers WHERE customer_id = ?';
-  
   db.query(sql, [customerId], (err, results) => {
     if (err) {
       console.error('Error fetching customer details:', err);
@@ -118,13 +119,18 @@ app.get('/api/customers/:customerId', function (req, res) {
     }
 
     if (Array.isArray(results) && results.length === 0) {
-      // No customer found with the provided ID
-      res.status(404).json({ error: 'Customer not found' });
+      // No organization found with the provided ID
+      res.status(404).json({ error: 'Organization not found' });
     } else {
       if (Array.isArray(results)) {
-        // Customer details found
-        const customer = results[0];
-        res.json(customer);
+        // Organization details found
+        const organization = results[0];
+
+        // Set the content type header to "application/json" before sending the JSON response
+        res.setHeader("Content-Type", "application/json");
+
+        // Send a JSON response with the organization details
+        res.json(organization);
       } else {
         // Handle other result types if needed
         res.status(500).json({ error: 'Internal server error' });
@@ -132,6 +138,34 @@ app.get('/api/customers/:customerId', function (req, res) {
     }
   });
 });
+
+app.delete('/api/customers/:customerId', function (req, res) {
+  const customerId = req.params.customerId;
+
+  const sql = 'DELETE FROM organisations WHERE organisation_id = ?';
+
+  db.query(sql, [customerId], (err, result) => {
+    if (err) {
+      console.error('Error deleting customer:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+  
+    // Check the type of result to determine if 'affectedRows' is available
+    if ('affectedRows' in result && typeof result.affectedRows === 'number') {
+      if (result.affectedRows === 0) {
+        // No customer found with the provided ID
+        res.status(404).json({ error: 'Customer not found' });
+      } else {
+        // Customer deleted successfully
+        res.status(200).json({ message: 'Customer deleted successfully' });
+      }
+    } else {
+      // Handle other result types if needed
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+})
 
 app.listen(port, () => {
   console.log(`API server listening on port ${port}`);
