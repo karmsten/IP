@@ -8,6 +8,8 @@ import Callback from "./Callback";
 import Public from "./Public";
 import Customers from "./Customers/Customers";
 import CustomerPage from "./CustomerPage/CustomerPage";
+import Products from "./Products/Products";
+import ProductPage from "./ProductPage/ProductPage";
 
 interface AppProps extends RouteComponentProps {}
 
@@ -43,8 +45,16 @@ const App: React.FC<AppProps> = (props) => {
           render={(props) => <Customers auth={auth} {...props} />}
         />
         <Route
+          path="/products"
+          render={(props) => <Products auth={auth} {...props} />}
+        />
+        <Route
           path="/customer/:customerId"
           render={(props) => <CustomerPage auth={auth} {...props} />}
+        />
+        <Route
+          path="/product/:productId"
+          render={(props) => <ProductPage auth={auth} {...props} />}
         />
       </div>
     </>

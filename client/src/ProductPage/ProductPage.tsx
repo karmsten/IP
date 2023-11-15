@@ -1,35 +1,30 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import Auth from "../Auth/Auth";
-import { errors } from "jose";
 
-interface CustomerPageProps {
+interface ProductPageProps {
   auth: Auth;
-  customerDetails?: {
-    // Make customerDetails an optional prop
-    organisation_id: number;
-    full_name: string;
-    created_date: string;
-    // Add more properties as needed
+  productDetails?: {
+    product_id: number;
+    basename: string;
+    note: string;
   };
 }
 
-const CustomerPage: React.FC<CustomerPageProps> = ({ auth }) => {
-  const { customerId } = useParams<{ customerId: string }>();
-  const [customerDetails, setCustomerDetails] = useState<any>(null);
+const ProductPage: React.FC<ProductPageProps> = ({ auth }) => {
+  const { productId } = useParams<{ productId: string }>();
+  const [productDetails, setProductDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const history = useHistory();
 
-  console.log("customerId here", customerId);
+  console.log("productId here", productId);
   useEffect(() => {
     if (!auth.isAuthenticated()) {
       // Handle unauthenticated user (e.g., redirect to login)
       return;
     }
 
-    fetch(
-      import.meta.env.VITE_REACT_APP_API_URL + `/api/customers/${customerId}`
-    )
+    fetch(import.meta.env.VITE_REACT_APP_API_URL + `/api/products/${productId}`)
       .then((response) => {
         if (!response.ok) {
           console.log("Response status:", response.status);
@@ -39,22 +34,22 @@ const CustomerPage: React.FC<CustomerPageProps> = ({ auth }) => {
       })
       .then((data) => {
         console.log("Data received:", data);
-        setCustomerDetails(data);
+        setProductDetails(data);
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Error fetching customer details:", error);
+        console.error("Error fetching product details:", error);
         setLoading(false);
       });
-  }, [customerId, auth]);
+  }, [productId, auth]);
 
-  const handleDeleteCustomer = () => {
-    if (!customerId) {
+  const handleDeleteProduct = () => {
+    if (!productId) {
       return;
     }
 
     fetch(
-      `${import.meta.env.VITE_REACT_APP_API_URL}/api/customers/${customerId}`,
+      `${import.meta.env.VITE_REACT_APP_API_URL}/api/products/${productId}`,
       {
         method: "DELETE",
         headers: {
@@ -70,12 +65,12 @@ const CustomerPage: React.FC<CustomerPageProps> = ({ auth }) => {
       })
       .then((data) => {
         // Handle success
-        console.log("Customer deleted successfully: ", data);
-        history.push("/customers");
+        console.log("Product deleted successfully: ", data);
+        history.push("/products");
       })
       .catch((error) => {
         // Handle error
-        console.log("Error deleting customer: ", error);
+        console.log("Error deleting product: ", error);
       });
   };
 
@@ -85,18 +80,18 @@ const CustomerPage: React.FC<CustomerPageProps> = ({ auth }) => {
 
   return (
     <div>
-      {customerDetails ? (
+      {productDetails ? (
         <>
-          <h1>{customerDetails.full_name}</h1>
-          <p>Customer ID: {customerDetails.organisation_id}</p>
-          <p>Email: {customerDetails.created_date}</p>
-          <button onClick={handleDeleteCustomer}>Delete Customer</button>
+          <h1>{productDetails.basename}</h1>
+          <p>Product ID: {productDetails.product_id}</p>
+          <p>{productDetails.note}</p>
+          <button onClick={handleDeleteProduct}>Delete Product</button>
         </>
       ) : (
-        <h2>Customer not found</h2>
+        <h2>Product not found</h2>
       )}
     </div>
   );
 };
 
-export default CustomerPage;
+export default ProductPage;

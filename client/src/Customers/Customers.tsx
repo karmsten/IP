@@ -5,6 +5,8 @@ import Auth from "../Auth/Auth";
 import CustomersTable from "../CustomersTable/CustomersTable";
 import CustomerDetails from "../CustomerDetails/CustomerDetails"; // Import the CustomerDetails component
 import CustomerPage from "../CustomerPage/CustomerPage";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface CustomersProps {
   auth: Auth;
@@ -102,11 +104,19 @@ const Customers: React.FC<CustomersProps> = ({ auth }) => {
       .then((data) => {
         console.log("Organization added successfully");
         setIsAddFormVisible(false); // Close the form
-        // Optionally, you can update the displayed list of organizations here
+
+        //success toast
+        toast.success("Customer successfully added", {
+          position: "top-center",
+        });
+
         setDatabaseData([...databaseData, data]);
       })
       .catch((err) => {
         console.error("Error:", err);
+
+        //show failure toast
+        toast.error("Failed to add customer", { position: "top-center" });
       });
   };
 
@@ -123,14 +133,18 @@ const Customers: React.FC<CustomersProps> = ({ auth }) => {
     setIsAddFormVisible(true);
   };
 
-  const filteredData = databaseData.filter((customer) =>
-    customer.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredData = databaseData.filter(
+    (customer) =>
+      customer &&
+      customer.full_name &&
+      customer.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const history = useHistory();
 
   return (
     <div>
+      <h1>Customers</h1>
       <button onClick={handleAddButtonClick}>Add Organization</button>
       {isAddFormVisible && (
         <div>

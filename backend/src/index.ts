@@ -80,6 +80,18 @@ app.get("/fetchOrganisations", function (req, res) {
   })
 })
 
+app.get("/fetchProducts", function (req, res) {
+  console.log("products fetched successfully")
+  db.query("SELECT * FROM products", (err, results) => {
+    if(err) {
+      console.error("Error fetching data: ", err);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+    res.json(results);
+  })
+})
+
 app.post("/addOrganisation", (req, res) => {
 
   const { full_name } = req.body;
@@ -102,6 +114,29 @@ VALUES (?, NULL, current_timestamp(), 1, NULL, NULL);
 
     console.log("Organization added successfully");
     res.status(200).json({ message: "Organization added successfully" });
+  });
+});
+
+app.post("/addProduct", (req, res) => {
+  const { basename, note, company_id } = req.body;
+  if (!basename || !company_id) {
+    return res.status(400).json({ error: "basename and company_id are required in the request body" });
+  }
+
+  const sql = `
+    INSERT INTO zterp01.products
+    (basename, note, company_id, product_type_id)
+    VALUES (?, ?, ?, NULL);
+  `;
+
+  db.query(sql, [basename, note, company_id], (err, result) => {
+    if (err) {
+      console.error("Error adding product:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    console.log("Product added successfully");
+    return res.status(200).json({ message: "Product added successfully" });
   });
 });
 
@@ -159,6 +194,68 @@ app.delete('/api/customers/:customerId', function (req, res) {
       } else {
         // Customer deleted successfully
         res.status(200).json({ message: 'Customer deleted successfully' });
+      }
+    } else {
+      // Handle other result types if needed
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+})
+
+app.get('/api/products/:productId', function (req, res) {
+  const productId = req.params.productId;
+  console.log("productId: ", productId)
+  // Modify the SQL query to select the product based on product_id
+  const sql = 'SELECT * FROM products WHERE product_id = ?';
+
+  db.query(sql, [productId], (err, results) => {
+    if (err) {
+      console.error('Error fetching product details:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+
+    if (Array.isArray(results) && results.length === 0) {
+      // No product found with the provided ID
+      res.status(404).json({ error: 'Product not found' });
+    } else {
+      if (Array.isArray(results)) {
+        // Product details found
+        const product = results[0];
+
+        // Set the content type header to "application/json" before sending the JSON response
+        res.setHeader("Content-Type", "application/json");
+
+        // Send a JSON response with the product details
+        res.json(product);
+      } else {
+        // Handle other result types if needed
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+  });
+});
+
+app.delete('/api/products/:productId', function (req, res) {
+  const productId = req.params.productId;
+
+  const sql = 'DELETE FROM products WHERE product_id = ?';
+
+  db.query(sql, [productId], (err, result) => {
+    if (err) {
+      console.error('Error deleting product:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+  
+    // Check the type of result to determine if 'affectedRows' is available
+    if ('affectedRows' in result && typeof result.affectedRows === 'number') {
+      if (result.affectedRows === 0) {
+        // No product found with the provided ID
+        res.status(404).json({ error: 'Product not found' });
+      } else {
+        // Product deleted successfully
+        res.status(200).json({ message: 'Product deleted successfully' });
       }
     } else {
       // Handle other result types if needed

@@ -28,6 +28,11 @@ const Nav: React.FC<NavProps> = ({ auth }) => {
               <Link to="/customers">Customers</Link>
             </li>
           )}
+          {isAuthenticated && (
+            <li>
+              <Link to="/products">Products</Link>
+            </li>
+          )}
           <li>
             <button onClick={isAuthenticated ? logout : login}>
               {isAuthenticated ? "Log Out" : "Log In"}
