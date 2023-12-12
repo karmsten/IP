@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Route, RouteComponentProps, Redirect } from "react-router-dom";
 import Home from "./Home/Home";
 import Profile from "./Profile/Profile";
@@ -10,11 +10,35 @@ import Customers from "./Customers/Customers";
 import CustomerPage from "./CustomerPage/CustomerPage";
 import Products from "./Products/Products";
 import ProductPage from "./ProductPage/ProductPage";
+import Quotations from "./Quotations/Quotations";
+import QuotationPage from "./QuotationPage/QuotationPage";
 
 interface AppProps extends RouteComponentProps {}
 
 const App: React.FC<AppProps> = (props) => {
   const [auth] = useState(() => new Auth(props.history));
+  const [tokenRenewalComplete, setTokenRenewalComplete] = useState(false);
+  const isAuthenticated = auth.isAuthenticated();
+
+  useEffect(() => {
+    const renewToken = async () => {
+      try {
+        await auth.renewToken((err: any, result: any) => {
+          if (err) {
+            console.error("Error renewing token:", err);
+            throw new Error("Token renewal failed");
+          }
+          setTokenRenewalComplete(true);
+        });
+      } catch (error) {
+        console.error("Error renewing token:", error);
+      }
+    };
+
+    renewToken();
+  }, [auth]);
+
+  /* if (!tokenRenewalComplete) return <div>Loading........</div>; */
 
   return (
     <>
@@ -40,14 +64,26 @@ const App: React.FC<AppProps> = (props) => {
           }
         />
         <Route path="/public" component={Public} />
-        <Route
-          path="/customers"
-          render={(props) => <Customers auth={auth} {...props} />}
-        />
-        <Route
-          path="/products"
-          render={(props) => <Products auth={auth} {...props} />}
-        />
+        {isAuthenticated && (
+          <Route
+            path="/customers"
+            render={(props) => <Customers auth={auth} {...props} />}
+          />
+        )}
+        {isAuthenticated && (
+          <Route
+            path="/products"
+            render={(props) => <Products auth={auth} {...props} />}
+          />
+        )}
+
+        {isAuthenticated && (
+          <Route
+            path="/quotations"
+            render={(props) => <Quotations auth={auth} {...props} />}
+          />
+        )}
+
         <Route
           path="/customer/:customerId"
           render={(props) => <CustomerPage auth={auth} {...props} />}
@@ -55,6 +91,10 @@ const App: React.FC<AppProps> = (props) => {
         <Route
           path="/product/:productId"
           render={(props) => <ProductPage auth={auth} {...props} />}
+        />
+        <Route
+          path="/quotation/:quotationId"
+          render={(props) => <QuotationPage auth={auth} {...props} />}
         />
       </div>
     </>

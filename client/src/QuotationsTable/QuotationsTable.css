@@ -1,0 +1,31 @@
+/* Style the table */
+.quotations-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  /* Style table headers */
+  .table-header {
+    background-color: #f2f2f2;
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+  }
+  
+  /* Style table rows */
+  .table-row {
+    border-bottom: 1px solid #ddd;
+  }
+  
+  /* Style table cells */
+  .table-cell {
+    padding: 10px;
+    text-align: left;
+  }
+  
+  /* Highlight table rows on hover */
+  .table-row:hover {
+    background-color: #f5f5f5;
+    cursor: pointer;
+  }

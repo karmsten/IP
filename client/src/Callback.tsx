@@ -9,6 +9,9 @@ interface CallbackProps extends RouteComponentProps {
 const Callback: React.FC<CallbackProps> = (props) => {
   useEffect(() => {
     if (/access_token|id_token|error/.test(props.location.hash)) {
+      console.log("props.location.hash = ", props.location.hash);
+      console.log("props.auth = ", props.auth);
+      console.log("handleAuthentication ran from callback");
       props.auth.handleAuthentication();
     } else {
       throw new Error("Invalid callback URL.");

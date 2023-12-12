@@ -14060,7 +14060,7 @@ var require_mime_db = __commonJS({
 var require_mime_types = __commonJS({
   "node_modules/mime-types/index.js"(exports) {
     "use strict";
-    var db2 = require_mime_db();
+    var db = require_mime_db();
     var extname = require("path").extname;
     var EXTRACT_TYPE_REGEXP = /^\s*([^;\s]*)(?:;|\s|$)/;
     var TEXT_TYPE_REGEXP = /^text\//i;
@@ -14077,7 +14077,7 @@ var require_mime_types = __commonJS({
         return false;
       }
       var match = EXTRACT_TYPE_REGEXP.exec(type);
-      var mime = match && db2[match[1].toLowerCase()];
+      var mime = match && db[match[1].toLowerCase()];
       if (mime && mime.charset) {
         return mime.charset;
       }
@@ -14124,8 +14124,8 @@ var require_mime_types = __commonJS({
     }
     function populateMaps(extensions, types) {
       var preference = ["nginx", "apache", void 0, "iana"];
-      Object.keys(db2).forEach(function forEachMimeType(type) {
-        var mime = db2[type];
+      Object.keys(db).forEach(function forEachMimeType(type) {
+        var mime = db[type];
         var exts = mime.extensions;
         if (!exts || !exts.length) {
           return;
@@ -14134,7 +14134,7 @@ var require_mime_types = __commonJS({
         for (var i = 0; i < exts.length; i++) {
           var extension2 = exts[i];
           if (types[extension2]) {
-            var from = preference.indexOf(db2[types[extension2]].source);
+            var from = preference.indexOf(db[types[extension2]].source);
             var to = preference.indexOf(mime.source);
             if (types[extension2] !== "application/octet-stream" && (from > to || from === to && types[extension2].substr(0, 12) === "application/")) {
               continue;
@@ -48829,7 +48829,9 @@ var jwtCheck = (0, import_express_oauth2_jwt_bearer.auth)({
   // AUTH0_DOMAIN
   tokenSigningAlg: "RS256"
 });
-var db = import_mysql2.default.createConnection({
+var dbp = import_mysql2.default.createPool({
+  connectionLimit: 10,
+  // Adjust the limit as per your requirement
   host: process.env.MYSQL_HOST,
   user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASSWORD,
@@ -48846,12 +48848,12 @@ var corsOptions = {
 import_dotenv2.default.config();
 var app = (0, import_express.default)();
 var port = process.env.PORT || 3001;
-db.connect((err) => {
+dbp.getConnection((err) => {
   if (err) {
-    console.error("Database connection error: ", err);
+    console.error("Database connection error from dbp: ", err);
     return;
   }
-  console.log("Connected to MariaDB database");
+  console.log("Connected to MariaDB through pool");
 });
 app.use((0, import_cors.default)(corsOptions));
 app.use(import_express.default.json());
@@ -48877,20 +48879,9 @@ app.get("/private", jwtCheck, function(req, res) {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-app.get("/fetchCustomers", function(req, res) {
-  console.log("customers fetched successfully");
-  db.query("SELECT * FROM customers", (err, results) => {
-    if (err) {
-      console.error("Error fetching data: ", err);
-      res.status(500).json({ error: "Internal server error" });
-      return;
-    }
-    res.json(results);
-  });
-});
 app.get("/fetchOrganisations", function(req, res) {
   console.log("organisations fetched successfully");
-  db.query("SELECT * FROM organisations", (err, results) => {
+  dbp.query("SELECT * FROM organisations", (err, results) => {
     if (err) {
       console.error("Error fetching data: ", err);
       res.status(500).json({ error: "Internal server error" });
@@ -48901,13 +48892,116 @@ app.get("/fetchOrganisations", function(req, res) {
 });
 app.get("/fetchProducts", function(req, res) {
   console.log("products fetched successfully");
-  db.query("SELECT * FROM products", (err, results) => {
+  dbp.query("SELECT * FROM products", (err, results) => {
     if (err) {
       console.error("Error fetching data: ", err);
       res.status(500).json({ error: "Internal server error" });
       return;
     }
     res.json(results);
+  });
+});
+app.get("/fetchQuotations", function(req, res) {
+  console.log("quotations fetched successfully");
+  dbp.query("SELECT * FROM sales_quotations", (err, results) => {
+    if (err) {
+      console.error("Error fetching data: ", err);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+    res.json(results);
+  });
+});
+app.get("/fetchQuotationsWithLines", function(req, res) {
+  console.log("Quotations with lines fetched successfully");
+  const sqlQuery = `
+  SELECT
+  sq.sales_quotation_id,
+  sq.organisation_id,
+  sq.created_date,
+  sql_lines.qty,
+  sql_lines.product_id
+FROM sales_quotations sq
+LEFT JOIN sales_quotation_lines sql_lines ON sq.sales_quotation_id = sql_lines.sales_quotation_id
+`;
+  dbp.query(sqlQuery, (err, results) => {
+    if (err) {
+      console.error("Error fetching data: ", err);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+    res.json(results);
+  });
+});
+app.get("/api/quotation/:quotationId", function(req, res) {
+  const { quotationId } = req.params;
+  console.log("Fetching quotation details for ID:", quotationId);
+  const sqlQuery = `
+    SELECT
+      sq.sales_quotation_id,
+      sq.organisation_id AS company_id,
+      sq.created_date,
+      sql_lines.qty,
+      sql_lines.product_id
+    FROM sales_quotations sq
+    LEFT JOIN sales_quotation_lines sql_lines ON sq.sales_quotation_id = sql_lines.sales_quotation_id
+    WHERE sq.sales_quotation_id = ?
+  `;
+  dbp.query(sqlQuery, [quotationId], (err, results) => {
+    if (err) {
+      console.error("Error fetching quotation details:", err);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+    if (!Array.isArray(results) || results.length === 0) {
+      res.status(404).json({ message: "Quotation not found" });
+      return;
+    }
+    const quotationDetails = results[0];
+    res.json(quotationDetails);
+  });
+});
+app.post("/api/quotations", function(req, res) {
+  const {
+    company_id,
+    organisation_id,
+    qty,
+    product_id,
+    line_no
+  } = req.body;
+  const insertQuotationQuery = `INSERT INTO sales_quotations (company_id, organisation_id)
+  VALUES (?, ?)`;
+  dbp.query(insertQuotationQuery, [company_id, organisation_id], (err, results) => {
+    if (err) {
+      console.error("Error inserting into sales_quotations table:", err);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+    const sales_quotation_id = results.insertId;
+    const insertQuotationLinesQuery = `
+      INSERT INTO sales_quotation_lines (sales_quotation_id, qty, product_id, line_no)
+      VALUES (?, ?, ?, ?)
+    `;
+    dbp.query(insertQuotationLinesQuery, [sales_quotation_id, qty, product_id, line_no], (err2, results2) => {
+      if (err2) {
+        console.error("Error inserting into sales_quotation_lines table:", err2);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+      res.status(200).json({ message: "Data added successfully to both tables" });
+    });
+  });
+});
+app.delete("/api/quotation/:quotationId", function(req, res) {
+  const { quotationId } = req.params;
+  const sqlQuery = `DELETE FROM sales_quotations WHERE sales_quotation_id = ?`;
+  dbp.query(sqlQuery, [quotationId], (err, results) => {
+    if (err) {
+      console.error("Error deleting quotation: ", err);
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+    res.json({ message: "Quotation deleted successfully" });
   });
 });
 app.post("/addOrganisation", (req, res) => {
@@ -48920,7 +49014,7 @@ app.post("/addOrganisation", (req, res) => {
 (full_name, company_id, created_date, created_by, changed_date, changed_by)
 VALUES (?, NULL, current_timestamp(), 1, NULL, NULL);
   `;
-  db.query(sql, [full_name], (err, result) => {
+  dbp.query(sql, [full_name], (err, result) => {
     if (err) {
       console.error("Error adding organization:", err);
       res.status(500).json({ error: "Internal server error" });
@@ -48940,7 +49034,7 @@ app.post("/addProduct", (req, res) => {
     (basename, note, company_id, product_type_id)
     VALUES (?, ?, ?, NULL);
   `;
-  db.query(sql, [basename, note, company_id], (err, result) => {
+  dbp.query(sql, [basename, note, company_id], (err, result) => {
     if (err) {
       console.error("Error adding product:", err);
       return res.status(500).json({ error: "Internal server error" });
@@ -48949,11 +49043,35 @@ app.post("/addProduct", (req, res) => {
     return res.status(200).json({ message: "Product added successfully" });
   });
 });
+app.post("/addQuotation", (req, res) => {
+  const { company_id, organisation_id, created_by } = req.body;
+  const sql = `INSERT INTO sales_quotations (company_id, organisation_id, created_by, created_date) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) RETURNING *`;
+  dbp.query(sql, [company_id, organisation_id, created_by], (err, result) => {
+    if (err) {
+      console.error("Error adding quotation: ", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+    console.log("Quotation added successfully");
+    return res.status(200).json({ message: "Quotation added successfully" });
+  });
+});
+app.post("/addQuotationLines", (req, res) => {
+  const { sales_quotation_id, created_by, line_type, qty, product_id, line_text, line_no } = req.body;
+  const sql = `INSERT INTO sales_quotation_lines (sales_quotation_id, created_by, line_type, qty, product_id, line_text, line_no, created_date) VALUES ($1, $2, $3, $4, $5, $6, $7, current_timestamp)`;
+  dbp.query(sql, [sales_quotation_id, created_by, line_type, qty, product_id, line_text, line_no], (err, result) => {
+    if (err) {
+      console.error("Error adding quotationLines: ", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+    console.log("QuotationLines added successfully");
+    return res.status(200).json({ message: "QuotationLines added successfully" });
+  });
+});
 app.get("/api/customers/:customerId", function(req, res) {
   const customerId = req.params.customerId;
   console.log("customerId: ", customerId);
   const sql = "SELECT * FROM organisations WHERE organisation_id = ?";
-  db.query(sql, [customerId], (err, results) => {
+  dbp.query(sql, [customerId], (err, results) => {
     if (err) {
       console.error("Error fetching customer details:", err);
       res.status(500).json({ error: "Internal server error" });
@@ -48975,7 +49093,7 @@ app.get("/api/customers/:customerId", function(req, res) {
 app.delete("/api/customers/:customerId", function(req, res) {
   const customerId = req.params.customerId;
   const sql = "DELETE FROM organisations WHERE organisation_id = ?";
-  db.query(sql, [customerId], (err, result) => {
+  dbp.query(sql, [customerId], (err, result) => {
     if (err) {
       console.error("Error deleting customer:", err);
       res.status(500).json({ error: "Internal server error" });
@@ -48996,7 +49114,7 @@ app.get("/api/products/:productId", function(req, res) {
   const productId = req.params.productId;
   console.log("productId: ", productId);
   const sql = "SELECT * FROM products WHERE product_id = ?";
-  db.query(sql, [productId], (err, results) => {
+  dbp.query(sql, [productId], (err, results) => {
     if (err) {
       console.error("Error fetching product details:", err);
       res.status(500).json({ error: "Internal server error" });
@@ -49018,7 +49136,7 @@ app.get("/api/products/:productId", function(req, res) {
 app.delete("/api/products/:productId", function(req, res) {
   const productId = req.params.productId;
   const sql = "DELETE FROM products WHERE product_id = ?";
-  db.query(sql, [productId], (err, result) => {
+  dbp.query(sql, [productId], (err, result) => {
     if (err) {
       console.error("Error deleting product:", err);
       res.status(500).json({ error: "Internal server error" });
