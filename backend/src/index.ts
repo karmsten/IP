@@ -196,15 +196,24 @@ app.post("/api/quotations", function (req, res) {
 app.delete("/api/quotation/:quotationId", function (req, res) {
   const { quotationId } = req.params;
 
-  const sqlQuery = `DELETE FROM sales_quotations WHERE sales_quotation_id = ?`;
+  const deleteLinesSqlQuery = `DELETE FROM sales_quotation_lines WHERE sales_quotation_id = ?`;
+  const deleteQuotationSqlQuery = `DELETE FROM sales_quotations WHERE sales_quotation_id = ?`;
 
-  dbp.query(sqlQuery, [quotationId], (err, results) => {
+  dbp.query(deleteLinesSqlQuery, [quotationId], (err, results) => {
     if (err) {
-      console.error("Error deleting quotation: ", err);
+      console.error("Error deleting quotation lines: ", err);
       res.status(500).json({ error: "Internal server error" });
       return;
     }
-    res.json({ message: "Quotation deleted successfully" });
+
+    dbp.query(deleteQuotationSqlQuery, [quotationId], (err, results) => {
+      if (err) {
+        console.error("Error deleting quotation: ", err);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+      res.json({ message: "Quotation deleted successfully" });
+    });
   });
 });
 
